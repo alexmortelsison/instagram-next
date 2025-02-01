@@ -1,0 +1,39 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import Link from "next/link";
+
+export default function Header() {
+  return (
+    <div className="shadow-sm border-b sticky top-0 shadow-gray-600 z-30 p-4">
+      <div className="flex justify-between items-center max-w-6xl mx-auto">
+        <Link href={"/"}>
+          <Image
+            src={"/word.webp"}
+            alt="logo"
+            width={120}
+            height={120}
+            className="hidden lg:inline-flex"
+          />
+        </Link>
+        <Link href={"/"}>
+          <Image
+            src={"/square.webp"}
+            alt="logo"
+            width={40}
+            height={40}
+            className="lg:hidden"
+          />
+        </Link>
+        <Input placeholder="Search" className="max-w-[210px]" />
+
+        <Button
+          className="text-sm text-blue-500 font-semibold"
+          variant={"ghost"}
+        >
+          Log in
+        </Button>
+      </div>
+    </div>
+  );
+}
