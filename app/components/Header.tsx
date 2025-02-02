@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import Link from "next/link";
+import SignInButton from "./SignInButton";
 
 export default function Header() {
   return (
@@ -26,13 +26,7 @@ export default function Header() {
           />
         </Link>
         <Input placeholder="Search" className="max-w-[210px]" />
-
-        <Button
-          className="text-sm text-blue-500 font-semibold"
-          variant={"ghost"}
-        >
-          Log in
-        </Button>
+        <SignInButton />
       </div>
     </div>
   );
