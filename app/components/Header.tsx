@@ -5,8 +5,8 @@ import SignInButton from "./SignInButton";
 
 export default function Header() {
   return (
-    <div className="shadow-sm border-b sticky top-0 shadow-gray-600 z-30 p-4">
-      <div className="flex justify-between items-center max-w-6xl mx-auto">
+    <div className="shadow-sm border-b sticky top-0 shadow-gray-600 z-30">
+      <div className="flex justify-between items-center max-w-6xl mx-auto p-4">
         <Link href={"/"}>
           <Image
             src={"/word.webp"}
@@ -26,6 +26,7 @@ export default function Header() {
           />
         </Link>
         <Input placeholder="Search" className="max-w-[210px]" />
+
         <SignInButton />
       </div>
     </div>
