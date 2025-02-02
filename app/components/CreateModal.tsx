@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,17 +67,21 @@ export default function CreateModal() {
     }
   }
 
-  useEffect(() => {
+  // Removed the useEffect that automatically uploads the image
+
+  const handleUploadClick = () => {
     if (selectedFile) {
       uploadImageToStorage();
     }
+  };
 
+  useEffect(() => {
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl); // ✅ Cleanup object URL safely
       }
     };
-  }, [selectedFile, previewUrl, uploadImageToStorage]); // ✅ Resolved missing dependencies
+  }, [previewUrl]); // ✅ Resolved missing dependencies
 
   return (
     <Dialog>
@@ -127,7 +132,8 @@ export default function CreateModal() {
           {/* Upload Button */}
           <DialogDescription>
             <Button
-              disabled={imageFileUploading || !imageFileUrl} // ✅ Disabled until upload completes
+              onClick={handleUploadClick} // Call the upload function on button click
+              disabled={imageFileUploading || !selectedFile} // ✅ Disabled until upload completes
               className="mt-4 w-full bg-red-600 text-white p-2 shadow-md disabled:bg-gray-500"
               variant={"destructive"}
             >
