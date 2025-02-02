@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,67 +22,87 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 
+interface FileData {
+  selectedFile: File | null;
+  previewUrl: string | null;
+  imageFileUrl: string | null;
+  uploading: boolean;
+}
+
 export default function CreateModal() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imageFileUrl, setImageFileUrl] = useState<string | null>(null);
-  const [imageFileUploading, setImageFileUploading] = useState(false);
+  const [fileData, setFileData] = useState<FileData>({
+    selectedFile: null,
+    previewUrl: null,
+    imageFileUrl: null,
+    uploading: false,
+  });
 
-  // ✅ useCallback ensures function reference stability
-  const uploadImageToStorage = useCallback(async () => {
-    if (!selectedFile) return;
+  const uploadImageToStorage = useCallback(
+    async (selectedFile: File | null) => {
+      if (!selectedFile) return;
 
-    setImageFileUploading(true);
-    const storage = getStorage(app);
-    const fileName = `${new Date().getTime()}-${selectedFile.name}`;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+      setFileData((prev) => ({ ...prev, uploading: true }));
+      const storage = getStorage(app);
+      const fileName = `${Date.now()}-${selectedFile.name}`;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log(`Upload is ${progress.toFixed(2)}% done`);
-      },
-      (error) => {
-        console.error("Upload error:", error);
-        setImageFileUploading(false);
-        setImageFileUrl(null);
-        setSelectedFile(null);
-      },
-      async () => {
-        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-        setImageFileUrl(downloadUrl);
-        setImageFileUploading(false);
-      }
-    );
-  }, [selectedFile]); // ✅ Added dependency
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload is ${progress.toFixed(2)}% done`);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          setFileData({
+            selectedFile: null,
+            previewUrl: null,
+            imageFileUrl: null,
+            uploading: false,
+          });
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setFileData((prev) => ({
+            ...prev,
+            imageFileUrl: downloadUrl,
+            uploading: false,
+          }));
+        }
+      );
+    },
+    []
+  );
 
-  function addImageToPost(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
       const objectUrl = URL.createObjectURL(file);
-      setPreviewUrl(objectUrl);
+      setFileData({
+        selectedFile: file,
+        previewUrl: objectUrl,
+        imageFileUrl: null,
+        uploading: false,
+      });
     }
-  }
-
-  // Removed the useEffect that automatically uploads the image
+  };
 
   const handleUploadClick = () => {
-    if (selectedFile) {
-      uploadImageToStorage();
+    if (fileData.selectedFile) {
+      uploadImageToStorage(fileData.selectedFile);
     }
   };
 
   useEffect(() => {
+    const previewUrl = fileData.previewUrl;
     return () => {
       if (previewUrl) {
-        URL.revokeObjectURL(previewUrl); // ✅ Cleanup object URL safely
+        URL.revokeObjectURL(previewUrl);
       }
     };
-  }, [previewUrl]); // ✅ Resolved missing dependencies
+  }, [fileData.previewUrl]);
 
   return (
     <Dialog>
@@ -91,16 +112,18 @@ export default function CreateModal() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex justify-center">
-            {selectedFile ? (
+            {fileData.selectedFile ? (
               <Image
-                src={previewUrl!}
+                src={fileData.previewUrl!}
                 alt="Uploaded Image"
                 width={40}
                 height={40}
                 className={`w-full h-[250px] object-cover cursor-pointer ${
-                  imageFileUploading ? "animate-pulse" : ""
+                  fileData.uploading ? "animate-pulse" : ""
                 }`}
-                onClick={() => setSelectedFile(null)}
+                onClick={() =>
+                  setFileData((prev) => ({ ...prev, selectedFile: null }))
+                }
               />
             ) : (
               <div className="flex flex-col items-center cursor-pointer">
@@ -115,13 +138,12 @@ export default function CreateModal() {
                   type="file"
                   className="hidden"
                   accept="image/*"
-                  onChange={addImageToPost}
+                  onChange={handleFileChange}
                 />
               </div>
             )}
           </DialogTitle>
 
-          {/* Caption Input */}
           <DialogTitle className="flex justify-center">
             <Input
               placeholder="Enter caption"
@@ -129,15 +151,14 @@ export default function CreateModal() {
             />
           </DialogTitle>
 
-          {/* Upload Button */}
           <DialogDescription>
             <Button
-              onClick={handleUploadClick} // Call the upload function on button click
-              disabled={imageFileUploading || !selectedFile} // ✅ Disabled until upload completes
+              onClick={handleUploadClick}
+              disabled={fileData.uploading || !fileData.selectedFile}
               className="mt-4 w-full bg-red-600 text-white p-2 shadow-md disabled:bg-gray-500"
               variant={"destructive"}
             >
-              {imageFileUploading ? "Uploading..." : "Upload"}
+              {fileData.uploading ? "Uploading..." : "Upload"}
             </Button>
           </DialogDescription>
         </DialogHeader>
