@@ -28,7 +28,7 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { useSession } from "next-auth/react"; // ✅ Import useSession for user data
+import { useSession } from "next-auth/react"; 
 
 interface FileData {
   selectedFile: File | null;
@@ -39,10 +39,9 @@ interface FileData {
 }
 
 export default function CreateModal() {
-  const { data: session } = useSession(); // ✅ Get logged-in user data
-  const db = getFirestore(app); // ✅ Initialize Firestore
+  const { data: session } = useSession();
+  const db = getFirestore(app); 
 
-  // ✅ Type assertion to prevent TypeScript errors
   const user = session?.user as { uid: string; username: string } | null;
 
   const [fileData, setFileData] = useState<FileData>({
@@ -58,14 +57,15 @@ export default function CreateModal() {
       try {
         const downloadUrl = await getDownloadURL(fileRef);
 
-        // ✅ Updating the whole state
-        setFileData((prev) => ({
-          ...prev,
+       
+        setFileData({
+          selectedFile: null,
+          previewUrl: fileData.previewUrl,
           imageFileUrl: downloadUrl,
           uploading: false,
-        }));
+          caption,
+        });
 
-        // ✅ Save to Firestore (Creates "posts" collection)
         if (user) {
           await addDoc(collection(db, "posts"), {
             userId: user.uid,
@@ -80,17 +80,20 @@ export default function CreateModal() {
         console.error("Error saving to Firestore:", error);
       }
     },
-    [user]
+    [user, db, fileData.previewUrl] 
   );
 
   const uploadImageToStorage = useCallback(
     async (selectedFile: File | null, caption: string) => {
       if (!selectedFile) return;
 
-      setFileData((prev) => ({
-        ...prev,
+      setFileData({
+        selectedFile,
+        previewUrl: fileData.previewUrl,
+        imageFileUrl: fileData.imageFileUrl,
         uploading: true,
-      }));
+        caption,
+      });
 
       const storage = getStorage(app);
       const fileName = `${Date.now()}-${selectedFile.name}`;
@@ -119,7 +122,7 @@ export default function CreateModal() {
         }
       );
     },
-    [handleUploadSuccess] // ✅ Fixed: Added handleUploadSuccess as a dependency
+    [fileData.previewUrl, fileData.imageFileUrl, handleUploadSuccess]
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +130,6 @@ export default function CreateModal() {
     if (file) {
       const objectUrl = URL.createObjectURL(file);
 
-      // ✅ Updating the whole state
       setFileData({
         selectedFile: file,
         previewUrl: objectUrl,
@@ -139,10 +141,13 @@ export default function CreateModal() {
   };
 
   const handleCaptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileData((prev) => ({
-      ...prev,
+    setFileData({
+      selectedFile: fileData.selectedFile,
+      previewUrl: fileData.previewUrl,
+      imageFileUrl: fileData.imageFileUrl,
+      uploading: fileData.uploading,
       caption: e.target.value,
-    }));
+    });
   };
 
   const handleUploadClick = () => {
@@ -177,10 +182,13 @@ export default function CreateModal() {
                   fileData.uploading ? "animate-pulse" : ""
                 }`}
                 onClick={() =>
-                  setFileData((prev) => ({
-                    ...prev,
+                  setFileData({
                     selectedFile: null,
-                  }))
+                    previewUrl: fileData.previewUrl,
+                    imageFileUrl: fileData.imageFileUrl,
+                    uploading: fileData.uploading,
+                    caption: fileData.caption,
+                  })
                 }
               />
             ) : (
