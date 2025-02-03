@@ -53,18 +53,44 @@ export default function CreateModal() {
     caption: "",
   });
 
+  const handleUploadSuccess = useCallback(
+    async (fileRef: StorageReference, caption: string) => {
+      try {
+        const downloadUrl = await getDownloadURL(fileRef);
+
+        // ✅ Updating the whole state
+        setFileData((prev) => ({
+          ...prev,
+          imageFileUrl: downloadUrl,
+          uploading: false,
+        }));
+
+        // ✅ Save to Firestore (Creates "posts" collection)
+        if (user) {
+          await addDoc(collection(db, "posts"), {
+            userId: user.uid,
+            username: user.username,
+            imageUrl: downloadUrl,
+            caption,
+            createdAt: serverTimestamp(),
+          });
+          console.log("Post saved to Firestore with caption!");
+        }
+      } catch (error) {
+        console.error("Error saving to Firestore:", error);
+      }
+    },
+    [user]
+  );
+
   const uploadImageToStorage = useCallback(
     async (selectedFile: File | null, caption: string) => {
       if (!selectedFile) return;
 
-      // ✅ Updating the whole state
-      setFileData({
-        selectedFile,
-        previewUrl: fileData.previewUrl,
-        imageFileUrl: fileData.imageFileUrl,
+      setFileData((prev) => ({
+        ...prev,
         uploading: true,
-        caption,
-      });
+      }));
 
       const storage = getStorage(app);
       const fileName = `${Date.now()}-${selectedFile.name}`;
@@ -93,40 +119,8 @@ export default function CreateModal() {
         }
       );
     },
-    [fileData.previewUrl, fileData.imageFileUrl]
+    [handleUploadSuccess] // ✅ Fixed: Added handleUploadSuccess as a dependency
   );
-
-  const handleUploadSuccess = async (
-    fileRef: StorageReference,
-    caption: string
-  ) => {
-    try {
-      const downloadUrl = await getDownloadURL(fileRef);
-
-      // ✅ Updating the whole state
-      setFileData({
-        selectedFile: null,
-        previewUrl: fileData.previewUrl,
-        imageFileUrl: downloadUrl,
-        uploading: false,
-        caption,
-      });
-
-      // ✅ Save to Firestore (Creates "posts" collection)
-      if (user) {
-        await addDoc(collection(db, "posts"), {
-          userId: user.uid,
-          username: user.username,
-          imageUrl: downloadUrl,
-          caption,
-          createdAt: serverTimestamp(),
-        });
-        console.log("Post saved to Firestore with caption!");
-      }
-    } catch (error) {
-      console.error("Error saving to Firestore:", error);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,14 +139,10 @@ export default function CreateModal() {
   };
 
   const handleCaptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ✅ Updating the whole state
-    setFileData({
-      selectedFile: fileData.selectedFile,
-      previewUrl: fileData.previewUrl,
-      imageFileUrl: fileData.imageFileUrl,
-      uploading: fileData.uploading,
+    setFileData((prev) => ({
+      ...prev,
       caption: e.target.value,
-    });
+    }));
   };
 
   const handleUploadClick = () => {
@@ -187,13 +177,10 @@ export default function CreateModal() {
                   fileData.uploading ? "animate-pulse" : ""
                 }`}
                 onClick={() =>
-                  setFileData({
+                  setFileData((prev) => ({
+                    ...prev,
                     selectedFile: null,
-                    previewUrl: fileData.previewUrl,
-                    imageFileUrl: fileData.imageFileUrl,
-                    uploading: fileData.uploading,
-                    caption: fileData.caption,
-                  })
+                  }))
                 }
               />
             ) : (
