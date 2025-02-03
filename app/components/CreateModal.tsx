@@ -56,7 +56,15 @@ export default function CreateModal() {
   const uploadImageToStorage = useCallback(
     async (selectedFile: File | null, caption: string) => {
       if (!selectedFile) return;
-      setFileData((prev) => ({ ...prev, uploading: true }));
+
+      // ✅ Updating the whole state
+      setFileData({
+        selectedFile,
+        previewUrl: fileData.previewUrl,
+        imageFileUrl: fileData.imageFileUrl,
+        uploading: true,
+        caption,
+      });
 
       const storage = getStorage(app);
       const fileName = `${Date.now()}-${selectedFile.name}`;
@@ -85,21 +93,24 @@ export default function CreateModal() {
         }
       );
     },
-    []
+    [fileData.previewUrl, fileData.imageFileUrl]
   );
 
-  // ✅ Now receives `caption` as an argument
   const handleUploadSuccess = async (
     fileRef: StorageReference,
     caption: string
   ) => {
     try {
       const downloadUrl = await getDownloadURL(fileRef);
-      setFileData((prev) => ({
-        ...prev,
+
+      // ✅ Updating the whole state
+      setFileData({
+        selectedFile: null,
+        previewUrl: fileData.previewUrl,
         imageFileUrl: downloadUrl,
         uploading: false,
-      }));
+        caption,
+      });
 
       // ✅ Save to Firestore (Creates "posts" collection)
       if (user) {
@@ -107,7 +118,7 @@ export default function CreateModal() {
           userId: user.uid,
           username: user.username,
           imageUrl: downloadUrl,
-          caption: caption, // ✅ Caption is correctly passed
+          caption,
           createdAt: serverTimestamp(),
         });
         console.log("Post saved to Firestore with caption!");
@@ -121,6 +132,8 @@ export default function CreateModal() {
     const file = e.target.files?.[0];
     if (file) {
       const objectUrl = URL.createObjectURL(file);
+
+      // ✅ Updating the whole state
       setFileData({
         selectedFile: file,
         previewUrl: objectUrl,
@@ -132,10 +145,16 @@ export default function CreateModal() {
   };
 
   const handleCaptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileData((prev) => ({ ...prev, caption: e.target.value }));
+    // ✅ Updating the whole state
+    setFileData({
+      selectedFile: fileData.selectedFile,
+      previewUrl: fileData.previewUrl,
+      imageFileUrl: fileData.imageFileUrl,
+      uploading: fileData.uploading,
+      caption: e.target.value,
+    });
   };
 
-  // ✅ Passes caption to upload function
   const handleUploadClick = () => {
     if (fileData.selectedFile) {
       uploadImageToStorage(fileData.selectedFile, fileData.caption);
@@ -168,7 +187,13 @@ export default function CreateModal() {
                   fileData.uploading ? "animate-pulse" : ""
                 }`}
                 onClick={() =>
-                  setFileData((prev) => ({ ...prev, selectedFile: null }))
+                  setFileData({
+                    selectedFile: null,
+                    previewUrl: fileData.previewUrl,
+                    imageFileUrl: fileData.imageFileUrl,
+                    uploading: fileData.uploading,
+                    caption: fileData.caption,
+                  })
                 }
               />
             ) : (
