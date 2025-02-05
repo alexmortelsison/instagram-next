@@ -5,7 +5,7 @@ import SignInButton from "./SignInButton";
 
 export default function Header() {
   return (
-    <div className="shadow-sm border-b sticky top-0 shadow-gray-600 z-30">
+    <div className="shadow-sm border-b sticky top-0 shadow-gray-600 z-30 bg-[#0a0a0a]">
       <div className="flex justify-between items-center max-w-6xl mx-auto p-4">
         <Link href={"/"}>
           <Image

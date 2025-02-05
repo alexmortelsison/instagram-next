@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   getDownloadURL,
@@ -7,12 +6,14 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import {
-  getFirestore,
-  collection,
   addDoc,
+  collection,
+  getFirestore,
   serverTimestamp,
 } from "firebase/firestore";
 import { app } from "@/firebase";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -21,20 +22,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { CameraIcon, PlusCircleIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { PlusCircleIcon, CameraIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function CreateModal() {
   const { data: session } = useSession();
-  const user = session?.user as { uid: string; username: string } | null;
-
+  const user = session?.user as {
+    uid: string;
+    username: string;
+  } | null;
   const db = getFirestore(app);
   const storage = getStorage(app);
-
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -44,19 +45,19 @@ export default function CreateModal() {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile)); // ✅ Show preview
+      setPreviewUrl(URL.createObjectURL(selectedFile));
     }
   };
 
   const handleUpload = async () => {
     if (!file || !caption.trim())
-      return toast.error("⚠️ Please upload a file and enter a caption.");
+      return toast.error("Please upload a file and enter caption");
 
     setUploading(true);
-    toast("Uploading... ⏳", { duration: 3000 });
+    toast("Uploading...", { duration: 3000 });
 
-    const fileName = `${Date.now()}-${file.name}`;
-    const storageRef = ref(storage, `posts/${fileName}`);
+    const fileName = `${Date.now}-${file.name}`;
+    const storageRef = ref(storage, `/posts/${fileName}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     uploadTask.on(
@@ -64,31 +65,30 @@ export default function CreateModal() {
       (snapshot) => {
         const progress =
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        toast.info(`Uploading... ${progress.toFixed(0)}%`);
+        toast.info(`Upload is ${progress.toFixed(0)}%`);
       },
       (error) => {
-        console.error("Upload error:", error);
-        toast.error("❌ Upload failed");
+        console.log("Error:", error);
+        toast.error("Upload failed");
         setUploading(false);
       },
       async () => {
         const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-
         if (user) {
           await addDoc(collection(db, "posts"), {
-            userId: user.uid,
+            userid: user.uid,
             username: user.username,
             imageUrl: downloadUrl,
-            caption,
             createdAt: serverTimestamp(),
+            caption,
           });
-          toast.success("✅ Post created successfully!");
+          toast.success("Post created successfully!");
         }
-
         setFile(null);
-        setPreviewUrl(null);
         setCaption("");
+        setPreviewUrl(null);
         setUploading(false);
+        location.reload();
       }
     );
   };
@@ -96,66 +96,57 @@ export default function CreateModal() {
   return (
     <Dialog>
       <DialogTrigger>
-        <PlusCircleIcon className="hover:scale-125 transform transition duration-300" />
+        <PlusCircleIcon />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex justify-center">
-            {previewUrl ? (
-              <Image
-                src={previewUrl}
-                alt="Uploaded Image"
-                width={40}
-                height={40}
-                className={`w-full h-[250px] object-cover cursor-pointer ${
-                  uploading ? "animate-pulse" : ""
-                }`}
-                onClick={() => {
-                  setFile(null);
-                  setPreviewUrl(null);
-                }}
-              />
-            ) : (
-              <div className="flex flex-col items-center cursor-pointer">
-                <Label htmlFor="file-upload">
-                  <CameraIcon
-                    size={50}
-                    className="text-gray-400 cursor-pointer"
-                  />
-                </Label>
+          {previewUrl ? (
+            <Image
+              src={previewUrl}
+              alt="Uploaded file"
+              width={120}
+              height={120}
+              className={`w-full h-[200px] object-cover ${
+                uploading ? "animate-pulse" : ""
+              }`}
+              onClick={() => {
+                setFile(null);
+                setPreviewUrl(null);
+              }}
+            />
+          ) : (
+            <div className="flex justify-center">
+              <Label htmlFor="file-upload">
+                <CameraIcon size={40} />
                 <Input
                   id="file-upload"
                   type="file"
-                  className="hidden"
-                  accept="image/*"
                   onChange={handleFileChange}
+                  className="hidden"
                 />
-              </div>
-            )}
-          </DialogTitle>
-
-          {previewUrl && (
-            <DialogTitle className="flex justify-center">
-              <Input
-                placeholder="Enter caption"
-                className="border-none text-center mt-4 focus:outline-none focus:ring-0"
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-              />
-            </DialogTitle>
+              </Label>
+            </div>
           )}
-
-          <DialogDescription>
-            <Button
-              onClick={handleUpload}
-              disabled={uploading || !file}
-              className="mt-4 w-full bg-red-600 text-white p-2 shadow-md disabled:bg-gray-500"
-              variant={"destructive"}
-            >
-              {uploading ? "Uploading..." : "Upload"}
-            </Button>
-          </DialogDescription>
         </DialogHeader>
+        <DialogTitle>
+          {previewUrl && (
+            <Input
+              placeholder="Enter caption..."
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+          )}
+        </DialogTitle>
+        <DialogDescription>
+          <Button
+            disabled={!file || !previewUrl}
+            variant={"destructive"}
+            className="w-full text-white disabled:bg-gray-600"
+            onClick={handleUpload}
+          >
+            {uploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogDescription>
       </DialogContent>
     </Dialog>
   );
