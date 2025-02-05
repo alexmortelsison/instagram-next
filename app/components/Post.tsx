@@ -7,7 +7,7 @@ interface PostType {
   id: string;
   caption: string;
   imageUrl: string;
-  createdAt: string; // ✅ Make profileImg optional
+  createdAt: string;
 }
 
 export default function Post({ post }: { post: PostType }) {
