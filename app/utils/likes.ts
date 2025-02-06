@@ -1,5 +1,12 @@
 import { app } from "@/firebase";
-import { collection, deleteDoc, doc, getFirestore, onSnapshot, setDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getFirestore,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
 
 const db = getFirestore(app);
 
@@ -12,7 +19,6 @@ export const listenToLikes = (
   if (!postId) return () => {};
 
   const likesRef = collection(db, "posts", postId, "likes");
-
   return onSnapshot(likesRef, (snapshot) => {
     const likeCount = snapshot.size;
     const userHasLiked = snapshot.docs.some((doc) => doc.id === userId);
@@ -23,12 +29,13 @@ export const listenToLikes = (
 };
 
 export const toggleLike = async (
-  postId: string,
+  posId: string,
   userId: string,
   hasLiked: boolean
 ) => {
-  if (!postId || !userId) return;
-  const likeRef = doc(db, "posts", postId, "likes", userId);
+  if (!posId || !userId) return;
+
+  const likeRef = doc(db, "posts", posId, "likes", userId);
   if (hasLiked) {
     await deleteDoc(likeRef);
   } else {
