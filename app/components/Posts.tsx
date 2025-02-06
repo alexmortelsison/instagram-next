@@ -10,13 +10,7 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Post from "./Post";
-
-interface PostProps {
-  id: string;
-  caption: string;
-  imageUrl: string;
-  username: string;
-}
+import { PostProps } from "@/types/PostProps";
 
 export default function Posts() {
   const db = getFirestore(app);

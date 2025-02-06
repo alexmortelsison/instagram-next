@@ -20,25 +20,11 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
-
-interface PostProps {
-  id: string;
-  caption: string;
-  imageUrl: string;
-  username: string;
-}
-
-interface CommentProps {
-  id: string;
-  userId: string;
-  username: string;
-  profileImg: string;
-  text: string;
-  createdAt: string;
-}
+import { PostProps } from "@/types/PostProps";
+import { CommentProps } from "@/types/CommentProps";
 
 export default function Post({ post }: { post: PostProps }) {
-  // ✅ Always call hooks at the top
+
   const { data: session } = useSession();
   const user = session?.user as {
     uid: string;
@@ -94,7 +80,7 @@ export default function Post({ post }: { post: PostProps }) {
     return <div className="text-gray-500 text-center">Loading post...</div>;
   }
 
-  // ✅ Like & Unlike Function
+ 
   const toggleLike = async () => {
     if (!user) return alert("You must be logged in to like posts!");
 
@@ -107,7 +93,7 @@ export default function Post({ post }: { post: PostProps }) {
     }
   };
 
-  // ✅ Handle Comment Submission
+
   const submitComment = async () => {
     if (!user) return alert("You must be logged in to comment!");
     if (!commentText.trim()) return alert("Comment cannot be empty!");
