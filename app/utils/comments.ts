@@ -10,10 +10,8 @@ import {
 import { app } from "@/firebase";
 import { CommentProps } from "@/types/CommentProps";
 
-// ✅ Firestore instance
 const db = getFirestore(app);
 
-// ✅ Real-time listener for comments
 export const listenToComments = (
   postId: string,
   setComments: (val: CommentProps[]) => void
@@ -35,7 +33,6 @@ export const listenToComments = (
   });
 };
 
-// ✅ Add Comment
 export const addComment = async (
   postId: string,
   user: { uid: string; username: string; image?: string },
@@ -52,5 +49,5 @@ export const addComment = async (
     createdAt: serverTimestamp(),
   });
 
-  setCommentText(""); // ✅ Reset comment input
+  setCommentText("");
 };

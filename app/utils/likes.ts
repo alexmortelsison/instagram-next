@@ -8,10 +8,8 @@ import {
 } from "firebase/firestore";
 import { app } from "@/firebase";
 
-// ✅ Firestore instance
 const db = getFirestore(app);
 
-// ✅ Real-time listener for likes
 export const listenToLikes = (
   postId: string,
   userId: string | undefined,
@@ -28,7 +26,6 @@ export const listenToLikes = (
   });
 };
 
-// ✅ Like/Unlike Post
 export const toggleLike = async (
   postId: string,
   userId: string,
