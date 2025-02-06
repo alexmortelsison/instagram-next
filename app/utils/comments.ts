@@ -26,33 +26,36 @@ export const listenToComments = (
   );
 
   return onSnapshot(commentsRef, (snapshot) => {
-    const comments: CommentProps[] = snapshot.docs.map(
-      (doc: QueryDocumentSnapshot<DocumentData>) => {
-        const data = doc.data() as Omit<CommentProps, "id">;
-        return { id: doc.id, ...data };
-      }
+    const updatedComments: CommentProps[] = snapshot.docs.map(
+      (doc: QueryDocumentSnapshot<DocumentData>) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<CommentProps, "id">),
+      })
     );
 
-    setComments(comments);
+    setComments(updatedComments);
   });
 };
 
-// ✅ Add a comment
 export const addComment = async (
   postId: string,
   user: { uid: string; username: string; image?: string },
   text: string,
   setCommentText: (text: string) => void
 ) => {
-  const trimmedText = text.trim();
-  if (!trimmedText) return alert("Comment cannot be empty!");
+  const commentText = text?.trim() || "";
+
+  if (!commentText) {
+    alert("Comment cannot be empty!");
+    return;
+  }
 
   try {
     await addDoc(collection(db, "posts", postId, "comments"), {
       userId: user.uid,
       username: user.username,
       profileImg: user.image || "/default-avatar.png",
-      text: trimmedText,
+      text: commentText,
       createdAt: serverTimestamp(),
     });
 
